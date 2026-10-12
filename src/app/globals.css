@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Vocadex — P.L.K. Siu Hon Sum Primary School
+   Design language: frosted glass, Duolingo-like playfulness.
+   No blue-violet gradients. Flat / warm tinted glass only.
+   ============================================================ */
+
+@theme {
+  /* English display font — Momo Trust Sans, falls back to Comic Sans */
+  --font-english: "Momo Trust Sans", "Comic Sans MS", "Comic Sans", "Chalkboard SE",
+    "Segoe Print", cursive, sans-serif;
+
+  /* Chinese type — Kai (楷體) primary, Song (宋體) secondary */
+  --font-kai: "KaiTi", "Kaiti SC", "STKaiti", "楷体", "BiauKai", "TW-Kai", serif;
+  --font-song: "SimSun", "Songti SC", "STSong", "宋体", "MingLiU", "PMingLiU", serif;
+  --font-chinese: "KaiTi", "Kaiti SC", "STKaiti", "楷体", "SimSun", "Songti SC",
+    "宋体", serif;
+
+  /* Theme accents (user selectable) */
+  --color-accent: #c9a227;
+  --color-accent-soft: #f3e6bf;
+}
+
+:root {
+  --accent: #c9a227;
+  --accent-soft: #f3e6bf;
+  --accent-deep: #8a6d10;
+  --glass-bg: rgba(255, 255, 255, 0.16);
+  --glass-brd: rgba(255, 255, 255, 0.38);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-english);
+  color: #2f2a24;
+  background-color: #f6efe4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Background layers ---------- */
+.bg-photo {
+  background-image: var(--bg-photo);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.bg-wash {
+  background: radial-gradient(
+      120% 120% at 15% 0%,
+      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0) 60%
+    ),
+    linear-gradient(160deg, rgba(255, 248, 237, 0.72), rgba(255, 238, 216, 0.55));
+}
+
+/* ---------- Frosted glass ---------- */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-brd);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 10px 30px rgba(60, 45, 20, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 14px 36px rgba(60, 45, 20, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.glass-soft {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- Duolingo-ish chunky button ---------- */
+.btn-duo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+  box-shadow: 0 5px 0 0 var(--accent-deep), 0 12px 22px rgba(60, 45, 20, 0.22);
+  background: var(--accent);
+  color: #fffdf7;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+.btn-duo:hover {
+  filter: brightness(1.05);
+}
+
+.btn-duo:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 0 var(--accent-deep), 0 6px 12px rgba(60, 45, 20, 0.2);
+}
+
+.btn-duo:disabled {
+  filter: grayscale(0.55) brightness(0.95);
+  box-shadow: 0 5px 0 0 rgba(120, 110, 90, 0.5);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  border-radius: 1rem;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+
+.btn-ghost:active {
+  transform: translateY(2px);
+}
+
+/* ---------- Chips / pills ---------- */
+.chip {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.34);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.chip-active {
+  background: var(--accent);
+  color: #fffdf7;
+  border-color: var(--accent-deep);
+  box-shadow: 0 6px 16px rgba(60, 45, 20, 0.25);
+}
+
+/* ---------- Type helpers ---------- */
+.font-kai {
+  font-family: var(--font-kai);
+}
+.font-song {
+  font-family: var(--font-song);
+}
+.font-cn {
+  font-family: var(--font-chinese);
+}
+
+/* ---------- Progress ring / bar ---------- */
+.duo-bar {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(90, 70, 40, 0.18);
+}
+
+.duo-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.5s ease;
+}
+
+/* ---------- Shake / pop animations ---------- */
+@keyframes pop {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: pop 0.28s ease-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-7px);
+  }
+  75% {
+    transform: translateX(7px);
+  }
+}
+.animate-shake {
+  animation: shake 0.32s ease-in-out;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 100, 70, 0.35);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
