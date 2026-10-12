@@ -267,6 +267,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, state.profile, state.records, energyView.value, energyView.last]);
 
+  /* Pull the teacher's updates while the app is open — this is how a
+     "reset everyone to 100" reaches pupils who are already signed in. */
+  const pullServer = useCallback((email: string) => {
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/progress?email=${encodeURIComponent(email)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { student?: StudentSnapshot | null };
+        const st = data.student;
+        if (!st) return;
+        setState((s) => {
+          if (!s.profile) return s;
+          const serverLast = Number(st.energyLast ?? 0);
+          if (serverLast <= s.energy.last) return s; // nothing newer
+          return {
+            ...s,
+            energy: {
+              value: Math.max(0, Math.min(ENERGY_MAX, Number(st.energy ?? s.energy.value))),
+              last: serverLast,
+            },
+          };
+        });
+      } catch {
+        /* offline */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const email = state.profile?.email;
+    if (!ready || !email) return;
+    pullServer(email);
+    const t = setInterval(() => pullServer(email), 60 * 1000);
+    const onFocus = () => pullServer(email);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [ready, state.profile?.email, pullServer]);
+
   const login = useCallback((email: string) => {
     const clean = email.trim().toLowerCase();
     setState((s) => ({

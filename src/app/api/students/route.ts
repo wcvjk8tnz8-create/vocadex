@@ -52,9 +52,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const body = (await req.json()) as { emails?: string[]; reset?: string };
+    const body = (await req.json()) as {
+      emails?: string[];
+      reset?: string;
+      resetAllEnergy?: boolean;
+      resetEnergy?: string;
+    };
     const result = await mutate((db) => {
       const now = Date.now();
+      /* teacher pressed "Reset everyone's energy to 100" */
+      if (body?.resetAllEnergy) {
+        for (const s of Object.values(db.students)) {
+          s.energy = 100;
+          s.energyLast = now;
+          s.updatedAt = now;
+        }
+        return rowsOf(db);
+      }
+      if (body?.resetEnergy) {
+        const email = body.resetEnergy.trim().toLowerCase();
+        const s = db.students[email];
+        if (s) {
+          s.energy = 100;
+          s.energyLast = now;
+          s.updatedAt = now;
+        }
+        return rowsOf(db);
+      }
       if (body?.reset) {
         const email = body.reset.trim().toLowerCase();
         const s = db.students[email];

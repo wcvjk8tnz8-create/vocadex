@@ -52,6 +52,7 @@ export default function TeacherPage() {
   const [qrCode, setQrCode] = useState("");
   const [qrExpiry, setQrExpiry] = useState(0);
   const [qrUses, setQrUses] = useState(0);
+  const [openQr, setOpenQr] = useState<string>("");
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   /* --------------------------- session check --------------------------- */
@@ -208,6 +209,42 @@ export default function TeacherPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function resetAllEnergy() {
+    if (!confirm("Give every student 100 energy? 確定要將所有學生的能量重設為 100 嗎？"))
+      return;
+    setBusy(true);
+    try {
+      await fetch("/api/students", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ resetAllEnergy: true }),
+      });
+      await load(token);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetOne(email: string) {
+    setBusy(true);
+    try {
+      await fetch("/api/students", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ resetEnergy: email }),
+      });
+      await load(token);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function studentQrUrl(email: string, download = false) {
+    return `/api/student-qr?email=${encodeURIComponent(email)}&token=${encodeURIComponent(
+      token
+    )}${download ? "&download=1" : ""}`;
   }
 
   async function cancelQr() {
@@ -614,6 +651,13 @@ export default function TeacherPage() {
             <section className="glass rounded-[28px] p-6">
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <h2 className="text-xl font-black">Class list 學生名單</h2>
+              <button
+                onClick={() => void resetAllEnergy()}
+                className="btn-duo px-4 py-2 text-sm"
+                disabled={busy}
+              >
+                ⚡ Reset all to 100
+              </button>
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -646,7 +690,21 @@ export default function TeacherPage() {
                           {s.password || "— none —"}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        <button
+                          onClick={() =>
+                            setOpenQr((cur) => (cur === s.email ? "" : s.email))
+                          }
+                          className="btn-duo px-3 py-1.5 text-xs"
+                        >
+                          {openQr === s.email ? "Hide QR" : "QR"}
+                        </button>
+                        <button
+                          onClick={() => void resetOne(s.email)}
+                          className="btn-ghost px-3 py-1.5 text-xs"
+                        >
+                          ⚡100
+                        </button>
                         <button
                           onClick={() => void resetPassword(s.email)}
                           className="btn-ghost px-3 py-1.5 text-xs"
@@ -660,6 +718,30 @@ export default function TeacherPage() {
                           Remove
                         </button>
                       </div>
+                      {openQr === s.email && s.password && (
+                        <div className="w-full mt-3 grid sm:grid-cols-[220px_1fr] gap-4 items-center animate-rise">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={studentQrUrl(s.email)}
+                            alt={`QR for ${s.email}`}
+                            className="w-[220px] h-[220px] bg-white rounded-3xl p-2 mx-auto"
+                          />
+                          <div className="space-y-2">
+                            <p className="text-xs opacity-80 font-cn">
+                              掃描此碼即可直接登入：內容只含電郵與密碼（
+                              <span className="font-mono">VDX|{s.email}|{s.password}</span>
+                              ），不是網址。
+                            </p>
+                            <a
+                              href={studentQrUrl(s.email, true)}
+                              download={`vocadex-${s.email.split("@")[0]}.png`}
+                              className="btn-duo px-4 py-2 text-sm inline-block"
+                            >
+                              Download PNG
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

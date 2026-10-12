@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import { parseCredential } from "@/lib/credential";
 import { nameFromEmail, useApp } from "@/lib/store";
 
 const QrScanner = dynamic(() => import("@/components/QrScanner"), { ssr: false });
@@ -208,10 +209,35 @@ export default function LoginPage() {
           onClose={() => setScanning(false)}
           onResult={(text) => {
             setScanning(false);
-            setCode(text);
             setError("");
-            if (!id.trim()) setId("");
-            // sign in straight away if the class number is already filled in
+
+            /* A student QR holds "VDX|email|password" — fill everything in
+               and sign straight in, no typing at all. */
+            const cred = parseCredential(text);
+            if (cred) {
+              setId(cred.email.split("@")[0]);
+              setPassword(cred.password);
+              setBusy(true);
+              void (async () => {
+                try {
+                  await fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: cred.email, password: cred.password }),
+                  }).catch(() => undefined);
+                  login(cred.email);
+                  router.replace("/home");
+                } catch {
+                  setError("Cannot reach the server. Check your connection.");
+                } finally {
+                  setBusy(false);
+                }
+              })();
+              return;
+            }
+
+            /* Otherwise it may be a class code shown on the board. */
+            setCode(text);
             const emailNow = toEmail(id);
             if (emailNow.includes("@")) {
               setBusy(true);
