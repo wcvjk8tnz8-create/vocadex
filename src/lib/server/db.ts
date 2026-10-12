@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomInt } from "node:crypto";
 import type { Difficulty } from "@/lib/types";
 
 /**
@@ -49,15 +50,29 @@ export type StudentSnapshot = {
   energyLast: number;
   unitId: string;
   records: Record<string, UnitRecord>;
+  /** Login password. Set by the teacher from the dashboard. */
+  password?: string;
   updatedAt: number;
+};
+
+export type LoginToken = {
+  code: string;
+  label: string;
+  createdAt: number;
+  expiresAt: number;
+  uses: number;
 };
 
 type DB = {
   gifts: GiftRequest[];
   students: Record<string, StudentSnapshot>;
+  /** teacher session token -> expiry timestamp */
+  sessions: Record<string, number>;
+  /** class sign-in tokens shown as a QR code */
+  loginTokens: Record<string, LoginToken>;
 };
 
-const EMPTY: DB = { gifts: [], students: {} };
+const EMPTY: DB = { gifts: [], students: {}, sessions: {}, loginTokens: {} };
 const REDIS_KEY = "vocadex:db";
 
 /**
@@ -91,16 +106,16 @@ async function readRaw(): Promise<DB> {
         const json = (await res.json()) as { result?: string | null };
         if (json.result) return { ...EMPTY, ...(JSON.parse(json.result) as DB) };
       }
-      return EMPTY;
+      return { ...EMPTY, ...(memory ?? EMPTY) };
     } catch {
-      return memory ?? EMPTY;
+      return { ...EMPTY, ...(memory ?? EMPTY) };
     }
   }
   try {
     const txt = await fs.readFile(FILE, "utf8");
     return { ...EMPTY, ...(JSON.parse(txt) as DB) };
   } catch {
-    return memory ?? EMPTY;
+    return { ...EMPTY, ...(memory ?? EMPTY) };
   }
 }
 
@@ -158,18 +173,115 @@ export async function mutate<T>(fn: (db: DB) => Promise<T> | T): Promise<T> {
   });
 }
 
-/* ------------------------------ helpers ------------------------------ */
+/* ------------------------------ passwords ---------------------------- */
 
-export function teacherKey() {
-  return process.env.VOCATEX_TEACHER_KEY || process.env.TEACHER_KEY || "plkshs";
+const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1 confusion
+
+/** Kid-friendly 6-character password such as "K7M2Q9". */
+export function generatePassword() {
+  let out = "";
+  for (let i = 0; i < 6; i++) out += ALPHABET[randomInt(ALPHABET.length)];
+  return out;
 }
 
-export function checkTeacher(req: Request) {
+/**
+ * Short class sign-in code shown as a QR code, e.g. "SUN-4821".
+ * Students scan it (or type it) instead of typing a password.
+ */
+export function generateLoginCode() {
+  const words = ["SUN", "MOON", "STAR", "LEAF", "WAVE", "GOLD", "RAIN", "BLUE"];
+  const word = words[randomInt(words.length)];
+  let num = "";
+  for (let i = 0; i < 4; i++) num += String(randomInt(10));
+  return `${word}-${num}`;
+}
+
+export async function issueLoginToken(label: string, minutes = 30) {
+  const code = generateLoginCode();
+  const now = Date.now();
+  const token: LoginToken = {
+    code,
+    label: label || "Class",
+    createdAt: now,
+    expiresAt: now + minutes * 60 * 1000,
+    uses: 0,
+  };
+  await mutate((db) => {
+    for (const [k, v] of Object.entries(db.loginTokens)) {
+      if (v.expiresAt < now) delete db.loginTokens[k];
+    }
+    db.loginTokens[code] = token;
+  });
+  return token;
+}
+
+export async function consumeLoginToken(code: string) {
+  const clean = String(code ?? "").trim().toUpperCase();
+  if (!clean) return null;
+  return mutate((db) => {
+    const t = db.loginTokens[clean];
+    if (!t) return null;
+    if (t.expiresAt < Date.now()) {
+      delete db.loginTokens[clean];
+      return null;
+    }
+    t.uses += 1;
+    return t;
+  });
+}
+
+export async function revokeLoginToken(code: string) {
+  const clean = String(code ?? "").trim().toUpperCase();
+  await mutate((db) => {
+    delete db.loginTokens[clean];
+  });
+}
+
+/* --------------------------- teacher access -------------------------- */
+
+export function teacherKey() {
+  return process.env.TEACHER_KEY || process.env.VOCATEX_TEACHER_KEY || "plkshs";
+}
+
+/** True when the school has actually set TEACHER_KEY in the environment. */
+export function teacherKeyConfigured() {
+  return Boolean(process.env.TEACHER_KEY || process.env.VOCATEX_TEACHER_KEY);
+}
+
+const SESSION_MS = 12 * 60 * 60 * 1000;
+
+export async function openSession(key: string) {
+  if (key !== teacherKey()) return null;
+  const token = Array.from({ length: 4 }, () =>
+    randomInt(0xffffffff).toString(36)
+  ).join("");
+  await mutate((db) => {
+    const now = Date.now();
+    for (const [t, exp] of Object.entries(db.sessions)) {
+      if (exp < now) delete db.sessions[t];
+    }
+    db.sessions[token] = now + SESSION_MS;
+  });
+  return token;
+}
+
+export async function isValidSession(token: string | null | undefined) {
+  if (!token) return false;
+  const db = await read();
+  const exp = db.sessions[token];
+  return typeof exp === "number" && exp > Date.now();
+}
+
+/** Accepts either the raw teacher key or a session token. */
+export async function checkTeacher(req: Request) {
   const header =
     req.headers.get("x-teacher-key") ||
+    req.headers.get("x-teacher-token") ||
     req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
     "";
   const url = new URL(req.url);
-  const key = header || url.searchParams.get("key") || "";
-  return key === teacherKey();
+  const value = header || url.searchParams.get("key") || url.searchParams.get("token") || "";
+  if (!value) return false;
+  if (value === teacherKey()) return true;
+  return isValidSession(value);
 }

@@ -20,7 +20,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我與我的家人",
     topic: "Family and friends",
     grammar: "I am / He is / She is",
-    textbook: "Longman Elect 1A Ch.1 / Oxford New Magic 1A Ch.1",
+    textbook: "Longman Elect 1A Ch.1",
     words: [
       "father|爸爸",
       "mother|媽媽",
@@ -64,7 +64,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我的身體",
     topic: "Parts of the body",
     grammar: "I have two ...",
-    textbook: "Longman Elect 1A Ch.2 / PLPR-W Book 1",
+    textbook: "Longman Elect 1A Ch.2",
     words: [
       "head|頭",
       "eye|眼睛",
@@ -136,7 +136,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我的文具",
     topic: "Things I bring to school",
     grammar: "I have a ... / This is my ...",
-    textbook: "Longman Elect 1A Ch.4 / Oxford New Magic 1A Ch.3",
+    textbook: "Longman Elect 1A Ch.4",
     words: [
       "book|書本",
       "pencil|鉛筆",
@@ -172,7 +172,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "身邊的動物",
     topic: "Animals and pets",
     grammar: "It is a ... / I like ...",
-    textbook: "Longman Elect 1B Ch.4 / Oxford New Magic 1B Ch.2",
+    textbook: "Longman Elect 1B Ch.4",
     words: [
       "cat|貓",
       "dog|狗",
@@ -208,7 +208,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "數字與數數",
     topic: "Numbers 1–20",
     grammar: "How many ... ? There are ...",
-    textbook: "Longman Elect 1B Ch.4 / PLPR-W Book 1",
+    textbook: "Longman Elect 1B Ch.4",
     words: [
       "one|一",
       "two|二",
@@ -244,7 +244,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我喜愛的食物",
     topic: "Food and drinks I like",
     grammar: "I like ... / I do not like ...",
-    textbook: "Longman Elect 1B Ch.5 / Oxford New Magic 1B Ch.4",
+    textbook: "Longman Elect 1B Ch.5",
     words: [
       "apple|蘋果",
       "banana|香蕉",
@@ -318,7 +318,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "校園地方",
     topic: "Places and ordinal numbers",
     grammar: "Where is the library? It is on the first floor.",
-    textbook: "Longman Elect 2A Ch.1 / Oxford New Magic 2A Ch.1",
+    textbook: "Longman Elect 2A Ch.1",
     words: [
       "classroom|課室",
       "library|圖書館",
@@ -354,7 +354,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "守規則好孩子",
     topic: "School rules and imperatives",
     grammar: "You must / must not ...",
-    textbook: "Longman Elect 2A Ch.2 / Oxford New Magic 2A Ch.2",
+    textbook: "Longman Elect 2A Ch.2",
     words: [
       "rule|規則",
       "quiet|安靜",
@@ -390,7 +390,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我的一天",
     topic: "Daily routines and time",
     grammar: "I get up at seven o'clock.",
-    textbook: "Longman Elect 2B Ch.4 / Oxford New Magic 2B Ch.3",
+    textbook: "Longman Elect 2B Ch.4",
     words: [
       "get up|起床",
       "brush|刷牙",
@@ -426,7 +426,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "我們穿的衣服",
     topic: "Clothing and weather",
     grammar: "I am wearing a ... / His / Her ...",
-    textbook: "Longman Elect 2A Ch.5 / PLPR-W Book 3",
+    textbook: "Longman Elect 2A Ch.5",
     words: [
       "shirt|襯衫",
       "trousers|褲子",
@@ -462,7 +462,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "食物與飲品",
     topic: "Countable and uncountable nouns",
     grammar: "There is some ... / Are there any ... ?",
-    textbook: "Longman Elect 2B Ch.3 / Oxford New Magic 2B Ch.5",
+    textbook: "Longman Elect 2B Ch.3",
     words: [
       "rice|米飯",
       "noodles|麵條",
@@ -498,7 +498,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "香港的節日",
     topic: "Festivals and celebrations",
     grammar: "We eat ... at ...",
-    textbook: "Longman Elect 2B Ch.6 / Oxford New Magic 2B Ch.6",
+    textbook: "Longman Elect 2B Ch.6",
     words: [
       "festival|節日",
       "Chinese New Year|農曆新年",
@@ -534,7 +534,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "餘暇時間",
     topic: "Hobbies and free-time activities",
     grammar: "I like reading. / He likes swimming.",
-    textbook: "Longman Elect 2B Ch.5 / Oxford New Magic 2B Ch.4",
+    textbook: "Longman Elect 2B Ch.5",
     words: [
       "hobby|興趣",
       "read|閱讀",
@@ -570,7 +570,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "在公園",
     topic: "Places in a park and prepositions",
     grammar: "The ball is under the bench.",
-    textbook: "Longman Elect 2B Ch.2 / PLPR-W Book 4",
+    textbook: "Longman Elect 2B Ch.2",
     words: [
       "park|公園",
       "slide|滑梯",
@@ -608,7 +608,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "運用五感",
     topic: "The five senses",
     grammar: "I can see / hear / smell / taste / touch ...",
-    textbook: "Longman Elect 3A Ch.1 / Oxford New Magic 3A Ch.1",
+    textbook: "Longman Elect 3A Ch.1",
     words: [
       "see|看見",
       "hear|聽見",
@@ -644,7 +644,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "去購物",
     topic: "Shopping and prices",
     grammar: "How much is it? It is twenty dollars.",
-    textbook: "Longman Elect 3A Ch.3–4 / Oxford New Magic 3A Ch.4",
+    textbook: "Longman Elect 3A Ch.3–4",
     words: [
       "shop|商店",
       "buy|購買",
@@ -680,7 +680,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "烹飪樂趣",
     topic: "Cooking verbs and recipes",
     grammar: "First, ... Then, ... Finally, ...",
-    textbook: "Longman Elect 3A Ch.1–2 / Oxford New Magic 3A Ch.2",
+    textbook: "Longman Elect 3A Ch.1–2",
     words: [
       "cook|烹煮",
       "boil|煮沸",
@@ -716,7 +716,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "天氣與季節",
     topic: "Weather, seasons and clothes",
     grammar: "It is sunny today. / How is the weather?",
-    textbook: "Longman Elect 3A Ch.5 / Oxford New Magic 3A Ch.5",
+    textbook: "Longman Elect 3A Ch.5",
     words: [
       "weather|天氣",
       "sunny|晴朗",
@@ -752,7 +752,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "現在與從前",
     topic: "Past and present",
     grammar: "I was ... / They were ...",
-    textbook: "Longman Elect 3B Ch.3 / Oxford New Magic 3B Ch.3",
+    textbook: "Longman Elect 3B Ch.3",
     words: [
       "was|（過去）是",
       "were|（過去）是",
@@ -788,7 +788,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "特別的日子",
     topic: "Months, dates and birthdays",
     grammar: "My birthday is on the fifth of June.",
-    textbook: "Longman Elect 3A Ch.5–6 / Oxford New Magic 3A Ch.6",
+    textbook: "Longman Elect 3A Ch.5–6",
     words: [
       "January|一月",
       "March|三月",
@@ -824,7 +824,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "身邊的幫手",
     topic: "Jobs and people who help us",
     grammar: "A doctor helps sick people.",
-    textbook: "Longman Elect 3B Ch.4 / Oxford New Magic 3B Ch.5",
+    textbook: "Longman Elect 3B Ch.4",
     words: [
       "doctor|醫生",
       "nurse|護士",
@@ -860,7 +860,7 @@ export const LOWER_UNITS: Unit[] = [
     titleZh: "健康的我",
     topic: "Health, exercise and rest",
     grammar: "We should / should not ...",
-    textbook: "Longman Elect 3B Ch.6 / Oxford New Magic 3B Ch.6",
+    textbook: "Longman Elect 3B Ch.6",
     words: [
       "healthy|健康",
       "exercise|運動",

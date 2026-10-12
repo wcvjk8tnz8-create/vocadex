@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { getUnit, nextUnit, unitById, CURRICULUM } from "./curriculum";
+import { nameFromEmail } from "./names";
 import type { Difficulty } from "./types";
 
 /* ---------------------------- energy rules ---------------------------- */
@@ -59,6 +60,8 @@ export const AVATARS = [
   "snowman",
 ] as const;
 export type AvatarId = (typeof AVATARS)[number];
+
+export { nameFromEmail };
 
 export const AVATAR_LABEL: Record<AvatarId, string> = {
   chicken: "Chicken 小雞",
@@ -133,48 +136,6 @@ type State = {
 
 const STORAGE_KEY = "vocadex.v1";
 
-const FIRST_NAMES = [
-  "sara", "sarah", "sam", "samuel", "simon", "sophia", "sharon", "stephen", "steven",
-  "jack", "jackie", "james", "jane", "jason", "jenny", "joey", "john", "jordan", "joyce",
-  "mary", "mark", "matthew", "may", "michael", "michelle", "mandy", "ming",
-  "peter", "paul", "patrick", "phoebe", "david", "danny", "kelly", "kevin", "karen",
-  "kate", "ken", "kitty", "amy", "alice", "anna", "ben", "billy", "candy", "chloe",
-  "cindy", "emily", "eric", "eva", "fiona", "gary", "grace", "hannah", "helen", "ivan",
-  "linda", "laura", "leo", "lucas", "nancy", "nathan", "nicole", "oscar", "raymond",
-  "rebecca", "ryan", "sandy", "sue", "tammy", "tiffany", "tim", "toby", "tony", "tracy",
-  "victor", "vivian", "wendy", "william", "wilson", "yan", "yuki", "wing", "wai", "chi",
-  "ho", "ka", "chun", "kit", "lam", "lee", "chan", "cheung", "wong", "hoi", "hei", "yiu",
-];
-
-/** saratan@plkshs.edu.hk -> "Sara Tan" | 211B0000@plkshs.edu.hk -> "211B0000" */
-export function nameFromEmail(email: string): string {
-  const prefix = (email.split("@")[0] || "").trim();
-  if (!prefix) return "Student";
-  if (/[._\-+]/.test(prefix)) {
-    return prefix
-      .split(/[._\-+]+/)
-      .filter(Boolean)
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-      .join(" ");
-  }
-  if (/\d/.test(prefix)) return prefix.toUpperCase();
-  const lower = prefix.toLowerCase();
-  const match = FIRST_NAMES.filter((n) => lower.startsWith(n) && lower.length > n.length).sort(
-    (a, b) => b.length - a.length
-  )[0];
-  if (match) {
-    const first = match.charAt(0).toUpperCase() + match.slice(1);
-    const rest = lower.slice(match.length);
-    return `${first} ${rest.charAt(0).toUpperCase() + rest.slice(1)}`;
-  }
-  const cut = Math.ceil(lower.length / 2);
-  const a = lower.slice(0, cut);
-  const b = lower.slice(cut);
-  return b
-    ? `${a.charAt(0).toUpperCase() + a.slice(1)} ${b.charAt(0).toUpperCase() + b.slice(1)}`
-    : a.charAt(0).toUpperCase() + a.slice(1);
-}
-
 const DEFAULT_STATE: State = {
   profile: null,
   energy: { value: ENERGY_MAX, last: Date.now() },
@@ -188,6 +149,7 @@ type Ctx = {
   state: State;
   energy: number;
   msToNextRefill: number;
+  nextRefillAt: number;
   login: (email: string) => void;
   logout: () => void;
   updateProfile: (patch: Partial<Profile>) => void;
@@ -240,7 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setState(readStorage());
     setReady(true);
-    const t = setInterval(() => setNow(Date.now()), 30 * 1000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -262,7 +224,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const nextValue = Math.min(ENERGY_MAX, value + gained);
     const nextBase = last + periods * REFILL_PERIOD_MS;
     const msToNext = nextValue >= ENERGY_MAX ? 0 : REFILL_PERIOD_MS - (now - nextBase);
-    return { value: nextValue, last: nextBase, msToNext };
+    const nextRefillAt = nextValue >= ENERGY_MAX ? 0 : nextBase + REFILL_PERIOD_MS;
+    return { value: nextValue, last: nextBase, msToNext, nextRefillAt };
   }, [state.energy, now]);
 
   // commit the regenerated energy once per tick
@@ -491,6 +454,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     state,
     energy: energyView.value,
     msToNextRefill: energyView.msToNext,
+    nextRefillAt: energyView.nextRefillAt,
     login,
     logout,
     updateProfile,

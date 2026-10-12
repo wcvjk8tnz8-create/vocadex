@@ -4,14 +4,29 @@ import { checkTeacher, mutate, read, storageName, type GiftRequest } from "@/lib
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** GET /api/gifts — teacher dashboard listing (needs the teacher key). */
+/** GET /api/gifts — teacher dashboard listing (needs the teacher key/session). */
 export async function GET(req: Request) {
-  if (!checkTeacher(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await checkTeacher(req))) {
+    return NextResponse.json(
+      { error: "Unauthorized", hint: "Open /teacher and sign in with the teacher key." },
+      { status: 401 }
+    );
   }
   const db = await read();
   const gifts = [...db.gifts].sort((a, b) => b.at - a.at);
-  return NextResponse.json({ ok: true, storage: storageName(), gifts, students: db.students });
+  return NextResponse.json({
+    ok: true,
+    storage: storageName(),
+    gifts,
+    students: Object.values(db.students).map((s) => ({
+      email: s.email,
+      name: s.name,
+      grade: s.grade,
+      energy: s.energy,
+      password: s.password ?? "",
+      updatedAt: s.updatedAt,
+    })),
+  });
 }
 
 /** POST /api/gifts — a student scored 90%+ in a Unit Exercise. */
@@ -47,7 +62,7 @@ export async function POST(req: Request) {
 
 /** PATCH /api/gifts — teacher marks a gift as given (or undoes it). */
 export async function PATCH(req: Request) {
-  if (!checkTeacher(req)) {
+  if (!(await checkTeacher(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

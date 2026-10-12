@@ -46,7 +46,7 @@ function PlayInner() {
   const params = useParams<{ kind: string }>();
   const search = useSearchParams();
   const router = useRouter();
-  const { state, saveResult, energy } = useApp();
+  const { state, saveResult, energy, spendEnergy } = useApp();
 
   const kind = params.kind ?? "daily";
   const grade = Number(search.get("g") ?? state.profile?.grade ?? 4);
@@ -110,7 +110,9 @@ function PlayInner() {
       setCorrect(false);
       setChecked(true);
       setResults((r) => [...r, false]);
+      spendEnergy(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, cfg.time, checked, done]);
 
   const finish = useCallback(() => {
@@ -209,6 +211,8 @@ function PlayInner() {
     setCorrect(ok);
     setChecked(true);
     setResults((r) => [...r, ok]);
+    // energy is taken one question at a time, right here
+    spendEnergy(1);
   }
 
   const canCheck =
@@ -526,7 +530,7 @@ function PlayInner() {
             )}
             {!checked && (
               <div className="text-xs font-bold opacity-70">
-                Each question costs {ENERGY_COST_PER_QUESTION} energy.
+                This question costs {ENERGY_COST_PER_QUESTION} energy · you have ⚡ {energy}
               </div>
             )}
             <button

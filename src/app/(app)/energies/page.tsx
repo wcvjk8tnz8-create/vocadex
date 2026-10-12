@@ -18,17 +18,16 @@ function countdown(ms: number) {
 }
 
 export default function EnergiesPage() {
-  const { energy, state, msToNextRefill } = useApp();
-  const [tick, setTick] = useState(0);
+  const { energy, state, nextRefillAt } = useApp();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setTick((x) => x + 1);
-      setNow(Date.now());
-    }, 1000);
+    const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
   }, []);
+
+  const msToNext =
+    energy >= ENERGY_MAX || !nextRefillAt ? 0 : Math.max(0, nextRefillAt - now);
 
   const pct = Math.round((energy / ENERGY_MAX) * 100);
   const R = 68;
@@ -70,7 +69,7 @@ export default function EnergiesPage() {
                 Next refill 下次補充
               </div>
               <div className="text-3xl font-black tabular-nums mt-1">
-                {energy >= ENERGY_MAX ? "FULL 已滿" : countdown(msToNextRefill)}
+                {energy >= ENERGY_MAX ? "FULL 已滿" : countdown(msToNext)}
               </div>
               <div className="text-xs opacity-80 mt-1">
                 {energy >= ENERGY_MAX
@@ -128,7 +127,6 @@ export default function EnergiesPage() {
       <p className="text-center text-[11px] opacity-70 font-cn">
         版權歸 PLKSHS 所屬 · Vocadex · P.L.K. Siu Hon Sum Primary School
       </p>
-      <span className="hidden">{tick + now}</span>
     </div>
   );
 }

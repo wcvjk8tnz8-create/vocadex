@@ -102,12 +102,15 @@ export default function ExercisesPage() {
         : slug === "link"
         ? Math.max(2, Math.round(cfg.count / 5))
         : cfg.count;
-    const cost = count * ENERGY_COST_PER_QUESTION;
-    if (energy < cost) {
-      setNotice(`Not enough energy! You need ${cost} but you have ${energy}. (+50 every 12 hours)`);
+    // Energy is spent one question at a time while playing — you only need
+    // enough for the first question to begin.
+    void count;
+    if (energy < ENERGY_COST_PER_QUESTION) {
+      setNotice(
+        `Out of energy! You need ${ENERGY_COST_PER_QUESTION} energy to start. (+50 every 12 hours)`
+      );
       return;
     }
-    spendEnergy(count);
     const q = `g=${setup.grade}&t=${setup.term}&u=${setup.unitIndex}&d=${encodeURIComponent(
       setup.difficulty
     )}`;

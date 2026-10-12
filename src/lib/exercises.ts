@@ -4,6 +4,7 @@ import {
   expandWords,
   wordsOfScope,
 } from "./curriculum";
+import { hasArt } from "@/components/WordArt";
 import type { Difficulty, Question, Unit, Word } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -50,6 +51,19 @@ function pick<T>(arr: T[], rnd: () => number, n: number): T[] {
   return shuffle(arr, rnd).slice(0, n);
 }
 
+/**
+ * A shuffled bag that hands out every item once before repeating, so a
+ * practice set never asks the same word (or sentence) twice in a row.
+ */
+function bag<T>(items: T[], rnd: () => number): () => T {
+  const source = items.length > 0 ? items : [undefined as unknown as T];
+  let pool = shuffle(source, rnd);
+  return () => {
+    if (pool.length === 0) pool = shuffle(source, rnd);
+    return pool.pop() as T;
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Distractors                                                        */
 /* ------------------------------------------------------------------ */
@@ -59,9 +73,7 @@ function distractorsFor(target: Word, unit: Unit, rnd: () => number, n: number) 
     (w) => w.en.toLowerCase() !== target.en.toLowerCase()
   );
   const nearby = scope.length >= n ? scope : CURRICULUM.flatMap(expandWords);
-  const pool = nearby.filter(
-    (w) => w.en.toLowerCase() !== target.en.toLowerCase()
-  );
+  const pool = nearby.filter((w) => w.en.toLowerCase() !== target.en.toLowerCase());
   // prefer distractors of similar length on harder difficulties
   const sorted = [...pool].sort(
     (a, b) =>
@@ -69,7 +81,9 @@ function distractorsFor(target: Word, unit: Unit, rnd: () => number, n: number) 
       Math.abs(b.en.length - target.en.length)
   );
   const shortlist = sorted.slice(0, Math.max(n * 3, n + 3));
-  return pick(shortlist, rnd, n).map((w) => w.en);
+  const out = new Set<string>();
+  for (const w of pick(shortlist, rnd, n)) out.add(w.en);
+  return [...out];
 }
 
 function zhDistractors(target: Word, unit: Unit, rnd: () => number, n: number) {
@@ -79,7 +93,9 @@ function zhDistractors(target: Word, unit: Unit, rnd: () => number, n: number) {
   const pool = (scope.length >= n ? scope : CURRICULUM.flatMap(expandWords))
     .filter((w) => w.en.toLowerCase() !== target.en.toLowerCase())
     .map((w) => w.zh);
-  return pick(pool, rnd, n);
+  const out = new Set<string>();
+  for (const z of pick(pool, rnd, n)) out.add(z);
+  return [...out];
 }
 
 /* ------------------------------------------------------------------ */
@@ -91,10 +107,9 @@ function vocabChoice(
   rnd: () => number,
   opts: number,
   zhPrompt: boolean,
-  hint: boolean
+  hint: boolean,
+  target: Word
 ): Question {
-  const words = expandWords(unit);
-  const target = pick(words, rnd, 1)[0];
   const n = Math.max(2, Math.min(opts, 6)) - 1;
   if (zhPrompt) {
     const options = shuffle(
@@ -106,14 +121,13 @@ function vocabChoice(
       prompt: target.zh,
       options,
       answer: options.indexOf(target.en),
-      hint: hint ? `${target.en.slice(0, 1).toUpperCase()}… (${target.en.length} letters)` : undefined,
+      hint: hint
+        ? `${target.en.slice(0, 1).toUpperCase()}… (${target.en.length} letters)`
+        : undefined,
       zh: target.en,
     };
   }
-  const options = shuffle(
-    [target.zh, ...zhDistractors(target, unit, rnd, n)],
-    rnd
-  );
+  const options = shuffle([target.zh, ...zhDistractors(target, unit, rnd, n)], rnd);
   return {
     kind: "choice",
     prompt: target.en,
@@ -128,15 +142,11 @@ function guessChoice(
   unit: Unit,
   rnd: () => number,
   opts: number,
-  hint: boolean
+  hint: boolean,
+  target: Word
 ): Question {
-  const words = expandWords(unit);
-  const target = pick(words, rnd, 1)[0];
   const n = Math.max(2, Math.min(opts, 6)) - 1;
-  const options = shuffle(
-    [target.en, ...distractorsFor(target, unit, rnd, n)],
-    rnd
-  );
+  const options = shuffle([target.en, ...distractorsFor(target, unit, rnd, n)], rnd);
   return {
     kind: "choice",
     art: target.en,
@@ -147,22 +157,19 @@ function guessChoice(
   };
 }
 
-function sentenceOf(unit: Unit, rnd: () => number) {
-  const source =
-    unit.sentences.length > 0
-      ? unit.sentences
-      : unit.passage.split(/(?<=[.!?])\s+/);
-  return pick(source, rnd, 1)[0].replace(/[.?!]$/, "");
+function sentencesOf(unit: Unit): string[] {
+  return unit.sentences.length > 0
+    ? unit.sentences
+    : unit.passage.split(/(?<=[.!?])\s+/);
 }
 
-function reorderQuestion(unit: Unit, rnd: () => number): Question {
-  const sentence = sentenceOf(unit, rnd);
-  const tokens = sentence.split(" ").filter(Boolean);
+function reorderQuestion(sentence: string, unit: Unit, rnd: () => number): Question {
+  const tokens = sentence.replace(/[.?!]$/, "").split(" ").filter(Boolean);
   return {
     kind: "reorder",
     prompt: "Put the words in the correct order.",
     tokens: shuffle(tokens, rnd),
-    answer: sentence,
+    answer: sentence.replace(/[.?!]$/, ""),
     zh: unit.titleZh,
   };
 }
@@ -170,20 +177,21 @@ function reorderQuestion(unit: Unit, rnd: () => number): Question {
 function fillQuestion(
   unit: Unit,
   rnd: () => number,
-  withOptions: boolean
+  withOptions: boolean,
+  sentence: string
 ): Question {
-  const sentence = sentenceOf(unit, rnd);
+  const clean = sentence.replace(/[.?!]$/, "");
   const words = expandWords(unit)
     .map((w) => w.en)
     .filter((w) => {
-      const lower = sentence.toLowerCase();
+      const lower = clean.toLowerCase();
       const bare = w.replace(/\(.*?\)/g, "").trim();
       return lower.includes(bare.toLowerCase());
     });
   const target =
-    words.length > 0 ? pick(words, rnd, 1)[0] : pick(sentence.split(" "), rnd, 1)[0];
+    words.length > 0 ? pick(words, rnd, 1)[0] : pick(clean.split(" "), rnd, 1)[0];
   const bare = target.replace(/\(.*?\)/g, "").trim();
-  const masked = sentence.replace(
+  const masked = clean.replace(
     new RegExp(bare.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
     "________"
   );
@@ -198,7 +206,7 @@ function fillQuestion(
       { en: bare, zh: "" },
       unit,
       rnd,
-      Math.min(3, expandWords(unit).length - 1)
+      Math.min(3, Math.max(1, expandWords(unit).length - 1))
     );
     const options = shuffle([bare, ...fake], rnd);
     return { ...base, options };
@@ -208,43 +216,36 @@ function fillQuestion(
 
 function linkQuestion(unit: Unit, rnd: () => number, n: number): Question {
   const words = pick(expandWords(unit), rnd, Math.min(n, 6));
-  const left = shuffle(words, rnd).map((w) => w.en);
-  const right = shuffle(words, rnd).map((w) => w.zh);
   return {
     kind: "link",
     prompt: "Match the English word with its Chinese meaning.",
-    pairs: left.map((en, i) => ({
-      en,
-      zh: expandWords(unit).find((w) => w.en === en)?.zh ?? right[i],
-    })),
+    pairs: shuffle(words, rnd).map((w) => ({ en: w.en, zh: w.zh })),
   };
 }
 
-function readQuestion(unit: Unit, rnd: () => number, opts: number): Question {
-  const q = pick(unit.questions, rnd, 1)[0];
-  const options = [...q.options];
-  const answer = q.answer;
-  if (opts < options.length) {
-    // keep the correct answer, trim the rest
-    const correct = options[answer];
-    const others = options.filter((_, i) => i !== answer);
-    const trimmed = shuffle([correct, ...pick(others, rnd, opts - 1)], rnd);
+function readQuestion(unit: Unit, rnd: () => number, opts: number, base: Unit["questions"][number]): Question {
+  const options = [...base.options];
+  const answer = base.answer;
+  if (opts >= options.length) {
     return {
       kind: "read",
       prompt: unit.title,
       passage: unit.passage,
-      q: q.q,
-      options: trimmed,
-      answer: trimmed.indexOf(correct),
+      q: base.q,
+      options,
+      answer,
     };
   }
+  const correct = options[answer];
+  const others = options.filter((_, i) => i !== answer);
+  const trimmed = shuffle([correct, ...pick(others, rnd, opts - 1)], rnd);
   return {
     kind: "read",
     prompt: unit.title,
     passage: unit.passage,
-    q: q.q,
-    options,
-    answer,
+    q: base.q,
+    options: trimmed,
+    answer: trimmed.indexOf(correct),
   };
 }
 
@@ -258,6 +259,13 @@ export type BuildOptions = {
   seed?: number;
 };
 
+/** Words that have a hand-drawn picture, used by "Guess The Words". */
+function artWords(unit: Unit): Word[] {
+  const words = expandWords(unit);
+  const withArt = words.filter((w) => hasArt(w.en));
+  return withArt.length >= 4 ? withArt : words;
+}
+
 export function buildNewWords({ unit, difficulty }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(hashString(unit.id + difficulty));
@@ -267,12 +275,9 @@ export function buildNewWords({ unit, difficulty }: BuildOptions): Question[] {
     kind: "choice",
     prompt: w.en,
     options: shuffle(
-      [
-        w.zh,
-        ...zhDistractors(w, unit, rnd, Math.max(2, Math.min(cfg.options, 4) - 1)),
-      ],
+      [w.zh, ...zhDistractors(w, unit, rnd, Math.max(2, Math.min(cfg.options, 4) - 1))],
       rnd
-    ).map((x) => x),
+    ),
     answer: 0,
     zh: w.zh,
   }));
@@ -282,8 +287,9 @@ export function buildNewWords({ unit, difficulty }: BuildOptions): Question[] {
     const options = shuffle(q.options, rnd);
     return { ...q, options, answer: options.indexOf(q.zh ?? q.options[0]) };
   });
+  const rest = bag(words, rnd);
   const quiz = Array.from({ length: Math.max(4, cfg.count - learn.length) }, () =>
-    vocabChoice(unit, rnd, cfg.options, false, cfg.hint)
+    vocabChoice(unit, rnd, cfg.options, false, cfg.hint, rest())
   );
   return [...fixed, ...quiz];
 }
@@ -291,15 +297,20 @@ export function buildNewWords({ unit, difficulty }: BuildOptions): Question[] {
 export function buildDaily({ unit, difficulty, seed }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? todaySeed(unit.id + difficulty));
+  const words = expandWords(unit);
+  const nextWord = bag(words, rnd);
+  const nextArtWord = bag(artWords(unit), rnd);
+  const nextSentence = bag(sentencesOf(unit), rnd);
+  const nextRead = bag(unit.questions, rnd);
   const out: Question[] = [];
   for (let i = 0; i < cfg.count; i++) {
     const roll = rnd();
-    if (roll < 0.34) out.push(vocabChoice(unit, rnd, cfg.options, false, cfg.hint));
-    else if (roll < 0.5) out.push(guessChoice(unit, rnd, cfg.options, cfg.hint));
+    if (roll < 0.34) out.push(vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord()));
+    else if (roll < 0.5) out.push(guessChoice(unit, rnd, cfg.options, cfg.hint, nextArtWord()));
     else if (roll < 0.68)
-      out.push(vocabChoice(unit, rnd, cfg.options, true, cfg.hint));
-    else if (roll < 0.82) out.push(readQuestion(unit, rnd, cfg.options));
-    else out.push(fillQuestion(unit, rnd, difficulty === "easy" || difficulty === "medium"));
+      out.push(vocabChoice(unit, rnd, cfg.options, true, cfg.hint, nextWord()));
+    else if (roll < 0.82) out.push(readQuestion(unit, rnd, cfg.options, nextRead()));
+    else out.push(fillQuestion(unit, rnd, difficulty === "easy" || difficulty === "medium", nextSentence()));
   }
   return out;
 }
@@ -307,16 +318,18 @@ export function buildDaily({ unit, difficulty, seed }: BuildOptions): Question[]
 export function buildGuess({ unit, difficulty, seed }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
+  const next = bag(artWords(unit), rnd);
   return Array.from({ length: cfg.count }, () =>
-    guessChoice(unit, rnd, cfg.options, cfg.hint)
+    guessChoice(unit, rnd, cfg.options, cfg.hint, next())
   );
 }
 
 export function buildReorganize({ unit, difficulty, seed }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
+  const next = bag(sentencesOf(unit), rnd);
   const count = Math.max(4, Math.round(cfg.count * 0.7));
-  return Array.from({ length: count }, () => reorderQuestion(unit, rnd));
+  return Array.from({ length: count }, () => reorderQuestion(next(), unit, rnd));
 }
 
 export function buildLink({ unit, difficulty, seed }: BuildOptions): Question[] {
@@ -331,28 +344,20 @@ export function buildLink({ unit, difficulty, seed }: BuildOptions): Question[] 
 export function buildRead({ unit, difficulty, seed }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
-  const count = Math.max(3, Math.round(cfg.count * 0.6));
   const qs = unit.questions ?? [];
-  return Array.from({ length: count }, (_, i) => {
-    const base = qs[i % qs.length];
-    const options = [...base.options];
-    const answer = base.answer;
-    return {
-      kind: "read",
-      prompt: unit.title,
-      passage: unit.passage,
-      q: base.q,
-      options,
-      answer,
-    } as Question;
-  });
+  const count = Math.max(3, Math.round(cfg.count * 0.6));
+  const next = bag(qs, rnd);
+  return Array.from({ length: Math.min(count, Math.max(qs.length, 1)) }, () =>
+    readQuestion(unit, rnd, cfg.options, next())
+  );
 }
 
 export function buildFill({ unit, difficulty, seed }: BuildOptions): Question[] {
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
+  const next = bag(sentencesOf(unit), rnd);
   return Array.from({ length: cfg.count }, () =>
-    fillQuestion(unit, rnd, difficulty === "easy" || difficulty === "medium")
+    fillQuestion(unit, rnd, difficulty === "easy" || difficulty === "medium", next())
   );
 }
 
@@ -361,26 +366,30 @@ export function buildUnitTest({ unit, difficulty, seed }: BuildOptions): Questio
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
   const total = Math.max(cfg.count, 16);
+  const nextWord = bag(expandWords(unit), rnd);
+  const nextArtWord = bag(artWords(unit), rnd);
+  const nextSentence = bag(sentencesOf(unit), rnd);
+  const nextRead = bag(unit.questions, rnd);
   const out: Question[] = [];
   for (let i = 0; i < total; i++) {
     switch (i % 7) {
       case 0:
-        out.push(vocabChoice(unit, rnd, cfg.options, false, cfg.hint));
+        out.push(vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord()));
         break;
       case 1:
-        out.push(vocabChoice(unit, rnd, cfg.options, true, cfg.hint));
+        out.push(vocabChoice(unit, rnd, cfg.options, true, cfg.hint, nextWord()));
         break;
       case 2:
-        out.push(guessChoice(unit, rnd, cfg.options, cfg.hint));
+        out.push(guessChoice(unit, rnd, cfg.options, cfg.hint, nextArtWord()));
         break;
       case 3:
-        out.push(reorderQuestion(unit, rnd));
+        out.push(reorderQuestion(nextSentence(), unit, rnd));
         break;
       case 4:
-        out.push(fillQuestion(unit, rnd, difficulty === "easy"));
+        out.push(fillQuestion(unit, rnd, difficulty === "easy", nextSentence()));
         break;
       case 5:
-        out.push(readQuestion(unit, rnd, cfg.options));
+        out.push(readQuestion(unit, rnd, cfg.options, nextRead()));
         break;
       default:
         out.push(linkQuestion(unit, rnd, 5));
@@ -389,3 +398,4 @@ export function buildUnitTest({ unit, difficulty, seed }: BuildOptions): Questio
   }
   return out;
 }
+

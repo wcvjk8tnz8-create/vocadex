@@ -34,12 +34,15 @@ export default function HomePage() {
   const cost = cfg.count * ENERGY_COST_PER_QUESTION;
 
   function start(kind: "daily" | "new-words") {
-    if (energy < cost) {
+    // Energy is spent one question at a time while playing — you only need
+    // enough for the first question to begin.
+    if (energy < ENERGY_COST_PER_QUESTION) {
       setNotice(
-        `Not enough energy! You need ${cost} energy but you only have ${energy}. Wait for the next refill or visit Energies.`
+        `Out of energy! You need ${ENERGY_COST_PER_QUESTION} energy to start. Energy refills +50 every 12 hours — visit Energies.`
       );
       return;
     }
+    void cost;
     const q = `g=${setup.grade}&t=${setup.term}&u=${setup.unitIndex}&d=${encodeURIComponent(
       setup.difficulty
     )}`;
