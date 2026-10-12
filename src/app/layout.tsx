@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Vocadex — Learn English Words | PLKSHS",
   description:
     "Vocadex is an English vocabulary and exercise platform for students of P.L.K. Siu Hon Sum Primary School.",
+  icons: {
+    icon: [{ url: "/logo.png", sizes: "any" }],
+    apple: [{ url: "/logo.png" }],
+    shortcut: ["/logo.png"],
+  },
 };
 
 export const viewport: Viewport = {

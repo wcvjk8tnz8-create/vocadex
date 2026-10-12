@@ -203,4 +203,14 @@ public/backgrounds/              school photos used as backgrounds
 
 ---
 
+---
+
+## Logo
+
+`public/logo.png` is the Vocadex mark (blue "V" with the orange book/page accent).
+It is used as the browser favicon (`src/app/icon.png`), the sidebar badge, and the
+sign-in screen. Replace that single file to rebrand the whole app.
+
+---
+
 Copyright © PLKSHS · 版權歸保良局蕭漢森小學（PLKSHS）所屬

@@ -31,16 +31,14 @@ export default function LoginPage() {
     <main className="min-h-screen bg-photo bg-wash grid place-items-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="glass-strong rounded-[32px] p-7 animate-pop">
-          <div className="flex items-center gap-4 mb-5">
-            <div
-              className="h-16 w-16 rounded-3xl grid place-items-center text-white font-black text-3xl"
-              style={{ background: "var(--accent)" }}
-            >
-              V
-            </div>
-            <div>
+          <div className="flex flex-col items-center gap-3 mb-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Vocadex" className="h-24 w-24" />
+            <div className="text-center">
               <h1 className="text-3xl font-black leading-none">Vocadex</h1>
-              <p className="font-cn text-sm opacity-80 mt-1">保良局蕭漢森小學 · 英文詞彙練習平台</p>
+              <p className="font-cn text-sm opacity-80 mt-1">
+                保良局蕭漢森小學 · 英文詞彙練習平台
+              </p>
             </div>
           </div>
 

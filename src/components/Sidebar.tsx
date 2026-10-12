@@ -23,12 +23,8 @@ export default function Sidebar() {
       {/* ---------------- desktop sidebar ---------------- */}
       <aside className="hidden md:flex fixed left-4 top-4 bottom-4 w-[248px] flex-col glass rounded-[28px] p-4 z-30">
         <div className="flex items-center gap-3 px-2 pb-4">
-          <div
-            className="h-11 w-11 rounded-2xl grid place-items-center text-white font-black text-xl"
-            style={{ background: "var(--accent)" }}
-          >
-            V
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Vocadex" className="h-12 w-12 rounded-2xl" />
           <div className="leading-tight">
             <div className="text-xl font-black">Vocadex</div>
             <div className="font-cn text-[11px] opacity-70">保良局蕭漢森小學</div>
@@ -93,12 +89,8 @@ export default function Sidebar() {
 
       {/* ---------------- mobile top bar ---------------- */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 glass px-4 py-3 flex items-center gap-3">
-        <div
-          className="h-9 w-9 rounded-xl grid place-items-center text-white font-black"
-          style={{ background: "var(--accent)" }}
-        >
-          V
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Vocadex" className="h-10 w-10 rounded-xl" />
         <div className="leading-tight flex-1">
           <div className="font-black">Vocadex</div>
           <div className="font-cn text-[10px] opacity-70">保良局蕭漢森小學</div>
