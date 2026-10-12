@@ -68,7 +68,7 @@ const ITEMS: Item[] = [
 
 export default function ExercisesPage() {
   const router = useRouter();
-  const { state, updateProfile, spendEnergy, energy } = useApp();
+  const { state, updateProfile, energy } = useApp();
   const profile = state.profile!;
   const [setup, setSetup] = useState<Setup>({
     grade: profile.grade,

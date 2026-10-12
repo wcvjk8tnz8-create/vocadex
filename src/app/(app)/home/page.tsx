@@ -9,7 +9,7 @@ import { ENERGY_COST_PER_QUESTION, useApp, ENERGY_MAX } from "@/lib/store";
 
 export default function HomePage() {
   const router = useRouter();
-  const { state, updateProfile, spendEnergy, energy } = useApp();
+  const { state, updateProfile, energy } = useApp();
   const profile = state.profile!;
   const [setup, setSetup] = useState<Setup>({
     grade: profile.grade,
@@ -46,7 +46,6 @@ export default function HomePage() {
     const q = `g=${setup.grade}&t=${setup.term}&u=${setup.unitIndex}&d=${encodeURIComponent(
       setup.difficulty
     )}`;
-    spendEnergy(cfg.count);
     if (kind === "daily") router.push(`/play/daily?${q}`);
     else router.push(`/play/new-words?${q}`);
   }
@@ -201,7 +200,7 @@ function ExerciseCard({
       <div className="font-cn text-sm opacity-80">{zh}</div>
       <p className="text-xs opacity-80 mt-2 flex-1">{desc}</p>
       <div className="text-[11px] font-bold opacity-70 mt-3">
-        Cost：{cost} energy ({cost / ENERGY_COST_PER_QUESTION} questions × 2)
+        −{ENERGY_COST_PER_QUESTION} energy per question（每題扣 2 點，答完才算）
       </div>
       <button
         onClick={onClick}
