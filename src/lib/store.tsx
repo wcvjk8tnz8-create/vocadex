@@ -87,6 +87,22 @@ export type Profile = {
   difficulty: Difficulty;
 };
 
+/** Shape returned by GET /api/progress (mirrors src/lib/server/db.ts). */
+type StudentSnapshot = {
+  email: string;
+  name: string;
+  avatar?: string;
+  grade: number;
+  term: 1 | 2;
+  unitIndex: number;
+  difficulty: Difficulty;
+  energy: number;
+  energyLast: number;
+  unitId: string;
+  records: Record<string, UnitRecord>;
+  updatedAt?: number;
+};
+
 export type UnitRecord = {
   best: number;
   done: boolean;
@@ -305,6 +321,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       energy: { value: ENERGY_MAX, last: Date.now() },
     }));
+
+    /* Pull the cloud snapshot so a student keeps their energy and unit level
+       when signing in on another device. New accounts simply keep 100 energy. */
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/progress?email=${encodeURIComponent(clean)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { student?: StudentSnapshot | null };
+        const st = data.student;
+        if (!st) return;
+        setState((s) => {
+          if (!s.profile) return s;
+          const profile: Profile = {
+            ...s.profile,
+            name: st.name || s.profile.name,
+            avatar: ((st.avatar as AvatarId) ?? s.profile.avatar) as AvatarId,
+            grade: st.grade || s.profile.grade,
+            term: (st.term === 2 ? 2 : 1) as 1 | 2,
+            unitIndex: st.unitIndex || s.profile.unitIndex,
+            difficulty: (st.difficulty ?? s.profile.difficulty) as Profile["difficulty"],
+          };
+          const records = { ...s.records };
+          for (const [key, v] of Object.entries(st.records ?? {})) {
+            const prev = records[key];
+            records[key] = {
+              best: Math.max(prev?.best ?? 0, v?.best ?? 0),
+              done: (prev?.done ?? false) || Boolean(v?.done),
+              attempts: (prev?.attempts ?? 0) + (v?.attempts ?? 0),
+              updatedAt: Math.max(prev?.updatedAt ?? 0, v?.updatedAt ?? 0),
+            };
+          }
+          const value = Math.max(
+            0,
+            Math.min(ENERGY_MAX, Number(st.energy ?? ENERGY_MAX))
+          );
+          const last = Number(st.energyLast ?? Date.now());
+          return { ...s, profile, records, energy: { value, last } };
+        });
+      } catch {
+        /* offline — keep the local profile */
+      }
+    })();
   }, []);
 
   const logout = useCallback(() => {

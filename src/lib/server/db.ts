@@ -60,6 +60,15 @@ type DB = {
 const EMPTY: DB = { gifts: [], students: {} };
 const REDIS_KEY = "vocadex:db";
 
+/**
+ * Fallback store. On Vercel / Netlify the file system is read-only, so when no
+ * Redis is configured we keep the database in module memory instead of throwing.
+ * Writes still work for the lifetime of the warm instance; configure Upstash for
+ * persistence across instances.
+ */
+let memory: DB | null = null;
+let warned = false;
+
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const FILE = path.join(process.cwd(), ".data", "vocadex.json");
@@ -73,47 +82,67 @@ function lock<T>(fn: () => Promise<T>): Promise<T> {
 
 async function readRaw(): Promise<DB> {
   if (UPSTASH_URL && UPSTASH_TOKEN) {
-    const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
-      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return EMPTY;
-    const json = (await res.json()) as { result?: string | null };
-    if (!json.result) return EMPTY;
     try {
-      return { ...EMPTY, ...(JSON.parse(json.result) as DB) };
-    } catch {
+      const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { result?: string | null };
+        if (json.result) return { ...EMPTY, ...(JSON.parse(json.result) as DB) };
+      }
       return EMPTY;
+    } catch {
+      return memory ?? EMPTY;
     }
   }
   try {
     const txt = await fs.readFile(FILE, "utf8");
     return { ...EMPTY, ...(JSON.parse(txt) as DB) };
   } catch {
-    return EMPTY;
+    return memory ?? EMPTY;
   }
 }
 
 async function writeRaw(db: DB): Promise<void> {
   const value = JSON.stringify(db);
   if (UPSTASH_URL && UPSTASH_TOKEN) {
-    await fetch(UPSTASH_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${UPSTASH_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(["SET", REDIS_KEY, value]),
-      cache: "no-store",
-    });
-    return;
+    try {
+      await fetch(UPSTASH_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${UPSTASH_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(["SET", REDIS_KEY, value]),
+        cache: "no-store",
+      });
+      return;
+    } catch {
+      memory = db;
+      return;
+    }
   }
-  await fs.mkdir(path.dirname(FILE), { recursive: true });
-  await fs.writeFile(FILE, value, "utf8");
+  try {
+    await fs.mkdir(path.dirname(FILE), { recursive: true });
+    await fs.writeFile(FILE, value, "utf8");
+    return;
+  } catch {
+    // read-only file system (Vercel / Netlify serverless)
+    memory = db;
+    if (!warned) {
+      warned = true;
+      console.warn(
+        "[vocadex] File system is read-only — using in-memory storage. " +
+          "Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN for persistence."
+      );
+    }
+  }
 }
 
 export function storageName() {
-  return UPSTASH_URL && UPSTASH_TOKEN ? "upstash-redis" : "local-json";
+  if (UPSTASH_URL && UPSTASH_TOKEN) return "upstash-redis";
+  return process.env.VERCEL ? "memory-serverless" : "local-json";
 }
 
 export function read(): Promise<DB> {

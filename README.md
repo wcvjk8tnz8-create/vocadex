@@ -85,6 +85,36 @@ Sign in with any `@plkshs.edu.hk` address — for example
 
 ---
 
+## Deploy to Vercel
+
+1. Push this repository to GitHub (already done), then
+   **vercel.com → Add New → Project → Import** `wcvjk8tnz8-create/vocadex`.
+2. Framework preset is detected automatically (**Next.js**) — keep every default.
+3. Add the environment variables (Project → Settings → Environment Variables):
+
+   | Name | Value |
+   |---|---|
+   | `TEACHER_KEY` | the password teachers type on `/teacher` (e.g. `plkshs`) |
+   | `UPSTASH_REDIS_REST_URL` | from console.upstash.com |
+   | `UPSTASH_REDIS_REST_TOKEN` | from console.upstash.com |
+
+4. **Deploy.** Vercel builds with `npm run build` and serves the App Router routes
+   together with the `/api/gifts` and `/api/progress` serverless functions.
+
+> **Important:** Vercel's file system is read-only. Without Upstash, gift requests
+> are kept in the memory of whichever instance happens to serve the request, so they
+> can disappear between requests. The free Upstash tier is more than enough for a
+> whole school — connect it before going live.
+
+### Going live checklist
+
+- [ ] Set a real `TEACHER_KEY` and share it with the English panel only
+- [ ] Connect Upstash Redis
+- [ ] Visit `/teacher`, enter the key and confirm the dashboard loads
+- [ ] Try a unit test at 90%+ on a student account and confirm the request appears
+
+---
+
 ## Cloud back-end (mystery-gift notifications)
 
 Students and teachers share the same Next.js server, so no extra service is needed.
@@ -113,6 +143,10 @@ UPSTASH_REDIS_REST_TOKEN=
 Without any environment variables the app still works fully offline: progress is kept
 in `localStorage` and gift requests queue locally, then upload as soon as the server
 is reachable.
+
+Students also **sync down on sign-in**: `/api/progress?email=…` returns their saved
+profile, energy and unit records, so signing in on a school computer or at home keeps
+the same unit level and the same energy — a fresh device never gets a free refill.
 
 ---
 
