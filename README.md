@@ -207,9 +207,11 @@ configured on the server — the usual cause is adding the variable and forgetti
 Every student also gets their **own** QR card:
 
 - Teacher: `/teacher` → **Students** → press **QR** on a row → **Download PNG**.
-- The PNG is a real `.png`: a pure QR code with the **Vocadex logo printed in the
-  centre**, 720 × 720, error-correction level **H (30%)**, so the logo never stops it
-  scanning.
+- The PNG is a real `.png` card: **the QR code on top**, the **pupil's name printed
+  underneath** (so nobody takes the wrong card), the class number / email below that,
+  and a `PLKSHS · Vocadex` footer. 720 × 910.
+- The code itself has the **Vocadex logo printed in the centre**, rendered with
+  error-correction level **H (30%)**, so the logo never stops it scanning.
 - The encoded text is **only the email and the password** — no URL, nothing else:
 
   ```
@@ -218,6 +220,8 @@ Every student also gets their **own** QR card:
 
 - Pupil flow: open Vocadex → **Scan QR** → point at the card → the class number and
   password fill in and they are signed in straight away.
+- **🖼 All QR cards** builds one sheet with the whole class (three cards per row) —
+  print it, cut along the edges, and every pupil has their own card.
 - Print the cards and hand one to each child, or stick one in a reading record book.
 
 > Scanned text starting with `VDX|` is read as a student card; anything else is read

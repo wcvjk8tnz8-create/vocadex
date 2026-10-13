@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Avatar from "@/components/Avatar";
+import StudentQrCard from "@/components/StudentQrCard";
 import { gradeLabel } from "@/lib/curriculum";
+import { downloadDataUrl, drawStudentSheet } from "@/lib/qrCard";
 
 type CloudGift = {
   id: string;
@@ -222,6 +224,27 @@ export default function TeacherPage() {
         body: JSON.stringify({ resetAllEnergy: true }),
       });
       await load(token);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function downloadAllCards() {
+    const withPw = filteredStudents.filter((x) => x.password);
+    if (withPw.length === 0) {
+      alert("No student has a password yet. Press New on a row first.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const sheet = await drawStudentSheet(
+        withPw.map((x) => ({
+          name: x.name || x.email.split("@")[0],
+          email: x.email,
+          qrSrc: studentQrUrl(x.email),
+        }))
+      );
+      if (sheet) downloadDataUrl(sheet, "vocadex-qr-cards.png");
     } finally {
       setBusy(false);
     }
@@ -658,6 +681,13 @@ export default function TeacherPage() {
               >
                 ⚡ Reset all to 100
               </button>
+              <button
+                onClick={() => void downloadAllCards()}
+                className="btn-ghost px-4 py-2 text-sm"
+                disabled={busy}
+              >
+                🖼 All QR cards
+              </button>
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -718,30 +748,29 @@ export default function TeacherPage() {
                           Remove
                         </button>
                       </div>
-                      {openQr === s.email && s.password && (
-                        <div className="w-full mt-3 grid sm:grid-cols-[220px_1fr] gap-4 items-center animate-rise">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={studentQrUrl(s.email)}
-                            alt={`QR for ${s.email}`}
-                            className="w-[220px] h-[220px] bg-white rounded-3xl p-2 mx-auto"
-                          />
-                          <div className="space-y-2">
-                            <p className="text-xs opacity-80 font-cn">
-                              掃描此碼即可直接登入：內容只含電郵與密碼（
-                              <span className="font-mono">VDX|{s.email}|{s.password}</span>
-                              ），不是網址。
-                            </p>
-                            <a
-                              href={studentQrUrl(s.email, true)}
-                              download={`vocadex-${s.email.split("@")[0]}.png`}
-                              className="btn-duo px-4 py-2 text-sm inline-block"
-                            >
-                              Download PNG
-                            </a>
+                      {openQr === s.email &&
+                        (s.password ? (
+                          <div className="w-full mt-3 grid sm:grid-cols-[auto_1fr] gap-5 items-start animate-rise">
+                            <StudentQrCard
+                              name={s.name}
+                              email={s.email}
+                              qrSrc={studentQrUrl(s.email)}
+                            />
+                            <div className="space-y-2 text-xs opacity-80 font-cn">
+                              <p>
+                                卡片下方印有學生姓名，不會拿錯。掃描後自動帶入帳號與密碼，
+                                不用輸入任何資料。
+                              </p>
+                              <p className="font-mono break-all opacity-70">
+                                QR content: VDX|{s.email}|{s.password}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="w-full mt-3 text-xs opacity-80 font-cn">
+                            這位學生還沒有密碼，請先按 New 產生密碼。
+                          </p>
+                        ))}
                     </div>
                   ))}
                 </div>
