@@ -21,7 +21,7 @@ primary English curriculum.
 | **Teacher** | `/teacher` is protected by a server-checked key |
 | **Levels** | easy · medium · hard · extremely hard · impossible |
 | **Energy** | Max 100 · **−2 taken each time you answer one question** (not all at once) · **+50 every 12 hours** · teacher can reset everyone to 100 |
-| **Questions** | Deduplicated — a set never asks the same word, sentence or passage question twice |
+| **Questions** | Deduplicated — a set never asks the same word, sentence or passage question twice. Fill-in-the-blank only ever gaps a real word (never `I`, `the`, `a`), and multiple-choice options never contain two answers with the same meaning |
 | **Sign-in** | Class number only (e.g. `211B0000`), a personal password, or a **scanned class QR code** |
 | **Rewards** | Score **90%+** in a Unit Exercise → level up + a **real mystery gift**, and the teacher is notified automatically |
 
@@ -248,7 +248,11 @@ Each unit follows the EDB *English Language Education Key Learning Area Curricul
 Guide (Primary 1–6)* and the themes used by mainstream textbooks
 (Longman Elect / Oxford New Magic / PLPR-W), for example:
 
-**Primary 6 follows Longman Elect (2nd Edition) chapter by chapter:**
+**Primary 6 follows Longman Elect (2nd Edition) chapter by chapter.** Chapters 1–5 of
+6A are transcribed from the pupil's book: the Language focus 1 & 2 model sentences,
+the job-matching and purpose-clause phrases, and the news / blog passages.
+
+
 
 | Term | Unit | Longman Elect | Topic | Grammar |
 |---|---|---|---|---|

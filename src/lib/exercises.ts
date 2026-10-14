@@ -91,7 +91,11 @@ function zhDistractors(target: Word, unit: Unit, rnd: () => number, n: number) {
     (w) => w.en.toLowerCase() !== target.en.toLowerCase()
   );
   const pool = (scope.length >= n ? scope : CURRICULUM.flatMap(expandWords))
-    .filter((w) => w.en.toLowerCase() !== target.en.toLowerCase())
+    // a distractor with the same Chinese meaning would make two answers correct
+    .filter(
+      (w) =>
+        w.en.toLowerCase() !== target.en.toLowerCase() && w.zh !== target.zh
+    )
     .map((w) => w.zh);
   const out = new Set<string>();
   for (const z of pick(pool, rnd, n)) out.add(z);
@@ -227,9 +231,50 @@ function reorderQuestion(sentence: string, unit: Unit, rnd: () => number): Quest
   };
 }
 
+/* Blanking "I" or "the" teaches nothing, so these are never used as gaps. */
+const FILL_STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "but", "so", "because", "if", "when", "where",
+  "what", "who", "which", "that", "how", "why", "is", "am", "are", "was", "were",
+  "be", "been", "being", "have", "has", "had", "do", "does", "did", "will",
+  "would", "can", "could", "shall", "should", "may", "might", "must", "i", "you",
+  "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "my", "your",
+  "his", "its", "our", "their", "this", "these", "those", "there", "here", "in",
+  "on", "at", "to", "from", "for", "of", "with", "about", "into", "than", "then",
+  "too", "very", "not", "no", "up", "down", "out", "off", "over", "under",
+  "again", "more", "most", "some", "any", "every", "all", "both", "each",
+]);
+
+/** Whole-word test — "vet" must not match inside "veterinary". */
+function wholeWordHit(sentence: string, word: string) {
+  const esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^A-Za-z])${esc}(?=[^A-Za-z]|$)`, "i").test(sentence);
+}
+
+/** Replaces the first whole-word match of `word` with a blank. */
+function maskWord(sentence: string, word: string): string | null {
+  const esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(^|[^A-Za-z])${esc}(?=[^A-Za-z]|$)`, "i");
+  const m = sentence.match(re);
+  if (!m || m.index === undefined) return null;
+  const start = m.index + m[1].length;
+  return sentence.slice(0, start) + "________" + sentence.slice(start + word.length);
+}
+
+/** Meaningful words of a sentence, used only as a last resort. */
+function fallbackBlankables(sentence: string): string[] {
+  return sentence
+    .replace(/[.?!,;:"()]/g, " ")
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => /^[A-Za-z][A-Za-z'-]*$/.test(w))
+    .filter((w) => w.length >= 4)
+    .filter((w) => !FILL_STOPWORDS.has(w.toLowerCase()));
+}
+
 /**
  * `shift` lets us ask about the same sentence more than once by blanking a
  * different word each time — a genuinely different question, not a repeat.
+ * Returns null when the sentence has nothing worth blanking.
  */
 function fillQuestion(
   unit: Unit,
@@ -237,37 +282,48 @@ function fillQuestion(
   withOptions: boolean,
   sentence: string,
   shift = 0
-): Question {
-  const clean = sentence.replace(/[.?!]$/, "");
+): Question | null {
+  const clean = sentence.replace(/[.?!]$/, "").trim();
   const bare = (w: string) => w.replace(/\(.*?\)/g, "").trim();
-  const lower = clean.toLowerCase();
-  const found = expandWords(unit)
-    .map((w) => w.en)
-    .filter((w) => lower.includes(bare(w).toLowerCase()));
-  const candidates = found.length > 0 ? found : clean.split(" ");
-  const target = candidates[shift % candidates.length];
-  const word = bare(target);
-  const masked = clean.replace(
-    new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
-    "________"
-  );
+
+  /* 1. The unit's own vocabulary is exactly what the pupil is revising. */
+  let candidates = expandWords(unit)
+    .map((w) => bare(w.en))
+    .filter((w) => /[A-Za-z]/.test(w))
+    .filter((w) => wholeWordHit(clean, w));
+
+  if (withOptions) {
+    const single = candidates.filter((w) => !w.includes(" "));
+    if (single.length > 0) candidates = single;
+  }
+
+  /* 2. Otherwise blank the longest meaningful word in the sentence. */
+  if (candidates.length === 0) {
+    const fb = fallbackBlankables(clean).sort((a, b) => b.length - a.length);
+    if (fb.length === 0) return null;
+    candidates = fb;
+  }
+
+  const word = candidates[shift % candidates.length];
+  const masked = maskWord(clean, word);
+  if (!masked || masked === clean) return null;
+
+  const useOptions = withOptions && !word.includes(" ");
   const base: Question = {
     kind: "fill",
     prompt: masked,
     answer: word,
     hint: `${word.length} letters, starts with "${word.slice(0, 1).toUpperCase()}"`,
   };
-  if (withOptions) {
-    const fake = distractorsFor(
-      { en: word, zh: "" },
-      unit,
-      rnd,
-      Math.min(3, Math.max(1, expandWords(unit).length - 1))
-    );
-    const options = shuffle([word, ...fake], rnd);
-    return { ...base, options };
-  }
-  return base;
+  if (!useOptions) return base;
+
+  const fake = distractorsFor(
+    { en: word, zh: "" },
+    unit,
+    rnd,
+    Math.min(3, Math.max(1, expandWords(unit).length - 1))
+  );
+  return { ...base, options: shuffle([word, ...fake], rnd) };
 }
 
 function linkQuestion(unit: Unit, rnd: () => number, n: number): Question {
@@ -356,17 +412,19 @@ export function buildNewWords({ unit, difficulty }: BuildOptions): Question[] {
       case 1:
         quiz.push(guessChoice(unit, rnd, cfg.options, cfg.hint, nextArt()));
         break;
-      default:
+      default: {
+        const fq = fillQuestion(
+          unit,
+          rnd,
+          difficulty === "easy" || difficulty === "medium",
+          nextSentence(),
+          i
+        );
         quiz.push(
-          fillQuestion(
-            unit,
-            rnd,
-            difficulty === "easy" || difficulty === "medium",
-            nextSentence(),
-            i
-          )
+          fq ?? vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord())
         );
         break;
+      }
     }
   }
   return dedupe([...learnQuestions, ...quiz]);
@@ -388,16 +446,18 @@ export function buildDaily({ unit, difficulty, seed }: BuildOptions): Question[]
     else if (roll < 0.68)
       out.push(vocabChoice(unit, rnd, cfg.options, true, cfg.hint, nextZhWord()));
     else if (roll < 0.82) out.push(readQuestion(unit, rnd, cfg.options, nextRead()));
-    else
-      out.push(
-        fillQuestion(
-          unit,
-          rnd,
-          difficulty === "easy" || difficulty === "medium",
-          nextSentence(),
-          i
-        )
+    else {
+      const fq = fillQuestion(
+        unit,
+        rnd,
+        difficulty === "easy" || difficulty === "medium",
+        nextSentence(),
+        i
       );
+      out.push(
+        fq ?? vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord())
+      );
+    }
   }
   return dedupe(out);
 }
@@ -455,19 +515,21 @@ export function buildFill({ unit, difficulty, seed }: BuildOptions): Question[] 
   const cfg = difficultyConfig(difficulty);
   const rnd = mulberry32(seed ?? Date.now());
   const pool = sentencePool(unit);
+  const nextWord = bag(expandWords(unit), rnd);
   const out: Question[] = [];
   for (let i = 0; i < cfg.count; i++) {
     const sentence = pool[i % pool.length];
     // each extra round blanks a different word, so nothing is repeated
     const shift = Math.floor(i / pool.length);
+    const fq = fillQuestion(
+      unit,
+      rnd,
+      difficulty === "easy" || difficulty === "medium",
+      sentence,
+      shift
+    );
     out.push(
-      fillQuestion(
-        unit,
-        rnd,
-        difficulty === "easy" || difficulty === "medium",
-        sentence,
-        shift
-      )
+      fq ?? vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord())
     );
   }
   return dedupe(out);
@@ -500,15 +562,18 @@ export function buildUnitTest({ unit, difficulty, seed }: BuildOptions): Questio
         out.push(reorderQuestion(nextSentence(), unit, rnd));
         break;
       case 4:
-        out.push(
-          fillQuestion(
+        {
+          const fq = fillQuestion(
             unit,
             rnd,
             difficulty === "easy",
             sentences[i % sentences.length],
             Math.floor(i / sentences.length)
-          )
-        );
+          );
+          out.push(
+            fq ?? vocabChoice(unit, rnd, cfg.options, false, cfg.hint, nextWord())
+          );
+        }
         break;
       case 5:
         out.push(readQuestion(unit, rnd, cfg.options, nextRead()));
