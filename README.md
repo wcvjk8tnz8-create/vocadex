@@ -123,6 +123,56 @@ Sign in with any `@plkshs.edu.hk` address — for example
 
 ---
 
+## Deploy to Railway
+
+Railway keeps a real Node process alive, so Vocadex runs there with **no
+serverless caveats** — timers, file writes and the `/teacher` dashboard all behave
+exactly as they do on your laptop.
+
+### 1. Create the project
+
+1. Go to **railway.app** → **New Project** → **Deploy from GitHub repo**.
+2. Pick `wcvjk8tnz8-create/vocadex` and choose the **`railway`** branch
+   (that branch carries `railway.toml`, the health check and the Redis wiring).
+3. Railway detects Next.js via Nixpacks. Build and start need no changes:
+   - Build: `npm ci && npm run build`
+   - Start: `npm run start`
+   - Health check: `/api/health`
+4. Press **Deploy** and wait for the build (about 2–3 minutes first time).
+
+### 2. Add a Redis service (strongly recommended)
+
+Without Redis, Railway's file system is wiped on every redeploy and gift
+requests / passwords disappear.
+
+1. In the same project press **+ New** → **Database** → **Redis**.
+2. Open the Redis service → **Variables** → copy `REDIS_URL`.
+3. In the **web service** → **Variables** → add
+   `REDIS_URL` = `${{Redis.REDIS_URL}}` (Railway's reference syntax pastes the
+   private internal URL, e.g. `redis://default:…@redis.railway.internal:6379`).
+4. Redeploy. Visit `https://your-app.up.railway.app/api/health` — you want:
+
+   ```json
+   { "ok": true, "storage": "redis", "teacherKeyConfigured": true }
+   ```
+
+> `REDIS_URL` is handled by a small built-in RESP client, so there is no Redis
+> npm package to install. `redis://` and TLS `rediss://` both work.
+
+### 3. Set the teacher key
+
+Web service → **Variables** → `TEACHER_KEY` = your own password (not the default).
+Then redeploy.
+
+### 4. Going live on Railway
+
+- Settings → **Domains** → **Generate Domain** for a public URL, or add a custom
+  domain.
+- `/api/health` is the quickest way to confirm storage and the teacher key.
+- Storage priority is: `REDIS_URL` → Upstash REST → local JSON file.
+
+---
+
 ## Cloud back-end (mystery-gift notifications)
 
 Students and teachers share the same Next.js server, so no extra service is needed.

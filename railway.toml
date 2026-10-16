@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────────────────────
+# Railway deployment for Vocadex
+# https://railway.app
+# ─────────────────────────────────────────────────────────────
+
+[build]
+  builder = "nixpacks"
+  # install deps, then build, then drop the dev-only cache
+  buildCommand = "npm ci && npm run build"
+
+[deploy]
+  # `next start` listens on $PORT, which Railway injects automatically
+  startCommand = "npm run start"
+  healthcheckPath = "/api/health"
+  healthcheckTimeout = 100
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 10
+
+[env]
+  # Railway fills PORT for us; these are the app's own defaults.
+  NODE_ENV = "production"
+  NEXT_TELEMETRY_DISABLED = "1"
