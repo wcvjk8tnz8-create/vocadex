@@ -2,14 +2,18 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomInt } from "node:crypto";
 import type { Difficulty } from "@/lib/types";
+import { redisGet, redisOptions, redisSet } from "./redis";
 
 /**
  * Vocadex server storage.
  *
- * Two back-ends, chosen automatically:
- *  1. Upstash Redis REST  — set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
- *     (works on Vercel / Netlify / any serverless host, free tier is enough)
- *  2. Local JSON file      — `.data/vocadex.json` on any normal Node server
+ * Three back-ends, chosen automatically in this order:
+ *  1. Redis via REDIS_URL          — what Railway, Render, Fly and most hosts
+ *     give you. Spoken with a tiny built-in RESP client (no npm package).
+ *  2. Upstash Redis REST           — set UPSTASH_REDIS_REST_URL +
+ *     UPSTASH_REDIS_REST_TOKEN. Best for Vercel / Netlify / serverless.
+ *  3. Local JSON file              — `.data/vocadex.json` on any normal Node
+ *     server. Persistent on Railway only if you attach a volume.
  *
  * Everything else in the app talks to this module, so swapping in Supabase,
  * Postgres or Firestore later means editing this file only.
@@ -86,6 +90,7 @@ let warned = false;
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REDIS = redisOptions();
 const FILE = path.join(process.cwd(), ".data", "vocadex.json");
 
 let queue: Promise<unknown> = Promise.resolve();
@@ -96,6 +101,15 @@ function lock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function readRaw(): Promise<DB> {
+  if (REDIS) {
+    try {
+      const value = await redisGet(REDIS_KEY);
+      if (value) return { ...EMPTY, ...(JSON.parse(value) as DB) };
+      return { ...EMPTY, ...(memory ?? EMPTY) };
+    } catch {
+      return { ...EMPTY, ...(memory ?? EMPTY) };
+    }
+  }
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
       const res = await fetch(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
@@ -121,6 +135,15 @@ async function readRaw(): Promise<DB> {
 
 async function writeRaw(db: DB): Promise<void> {
   const value = JSON.stringify(db);
+  if (REDIS) {
+    try {
+      await redisSet(REDIS_KEY, value);
+      return;
+    } catch {
+      memory = db;
+      return;
+    }
+  }
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
       await fetch(UPSTASH_URL, {
@@ -149,15 +172,34 @@ async function writeRaw(db: DB): Promise<void> {
       warned = true;
       console.warn(
         "[vocadex] File system is read-only — using in-memory storage. " +
-          "Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN for persistence."
+          "Add a Redis service (REDIS_URL) or set UPSTASH_REDIS_REST_URL + " +
+          "UPSTASH_REDIS_REST_TOKEN for persistence."
       );
     }
   }
 }
 
 export function storageName() {
+  if (REDIS) return "redis";
   if (UPSTASH_URL && UPSTASH_TOKEN) return "upstash-redis";
-  return process.env.VERCEL ? "memory-serverless" : "local-json";
+  if (process.env.VERCEL || process.env.NETLIFY) return "memory-serverless";
+  return "local-json";
+}
+
+/** Short human note for /api/health and the teacher dashboard. */
+export function storageNote() {
+  switch (storageName()) {
+    case "redis":
+      return "Railway/host Redis (REDIS_URL) — persistent";
+    case "upstash-redis":
+      return "Upstash Redis REST — persistent";
+    case "memory-serverless":
+      return "In-memory only — data is lost when the instance sleeps";
+    default:
+      return process.env.RAILWAY_ENVIRONMENT
+        ? "Local JSON file — add a volume or a Redis service to persist"
+        : "Local JSON file";
+  }
 }
 
 export function read(): Promise<DB> {
