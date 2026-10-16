@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Avatar from "@/components/Avatar";
 import StudentQrCard from "@/components/StudentQrCard";
 import { gradeLabel } from "@/lib/curriculum";
+import { COPYRIGHT, COPYRIGHT_ZH, SCHOOL_DOMAIN, SCHOOL_NAME } from "@/lib/school";
 import { downloadDataUrl, drawStudentSheet } from "@/lib/qrCard";
 
 type CloudGift = {
@@ -314,7 +315,7 @@ export default function TeacherPage() {
       .split(/[\s,;\n]+/)
       .map((e) => e.trim())
       .filter(Boolean)
-      .map((e) => (e.includes("@") ? e : `${e}@plkshs.edu.hk`));
+      .map((e) => (e.includes("@") ? e : `${e}@${SCHOOL_DOMAIN}`));
     if (emails.length === 0) return;
     setBusy(true);
     try {
@@ -641,7 +642,7 @@ export default function TeacherPage() {
                 value={bulk}
                 onChange={(e) => setBulk(e.target.value)}
                 rows={4}
-                placeholder={"saratan@plkshs.edu.hk\n211B0000@plkshs.edu.hk"}
+                placeholder={`saratan@${SCHOOL_DOMAIN}\n211B0000@${SCHOOL_DOMAIN}`}
                 className="w-full rounded-2xl px-4 py-3 bg-white/60 border border-white/70 outline-none font-semibold"
               />
               <div className="flex flex-wrap gap-2 mt-3">
@@ -780,7 +781,7 @@ export default function TeacherPage() {
         )}
 
         <p className="text-center text-[11px] opacity-70 font-cn pb-6">
-          版權歸 PLKSHS 所屬 · © PLKSHS · Vocadex · P.L.K. Siu Hon Sum Primary School
+          {COPYRIGHT_ZH} · {COPYRIGHT} · {SCHOOL_NAME}
         </p>
       </div>
     </div>

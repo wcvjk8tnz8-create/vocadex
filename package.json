@@ -2,7 +2,7 @@
   "name": "vocadex",
   "version": "1.0.0",
   "private": true,
-  "description": "Vocadex — English vocabulary practice platform for P.L.K. Siu Hon Sum Primary School (PLKSHS)",
+  "description": "Vocadex — English vocabulary practice platform for primary school students",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

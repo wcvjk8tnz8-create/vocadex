@@ -3,9 +3,9 @@ import "./globals.css";
 import { AppProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: "Vocadex — Learn English Words | PLKSHS",
+  title: "Vocadex — Learn English Words",
   description:
-    "Vocadex is an English vocabulary and exercise platform for students of P.L.K. Siu Hon Sum Primary School.",
+    "Vocadex is an English vocabulary and exercise platform for primary school students.",
   icons: {
     icon: [{ url: "/logo.png", sizes: "any" }],
     apple: [{ url: "/logo.png" }],

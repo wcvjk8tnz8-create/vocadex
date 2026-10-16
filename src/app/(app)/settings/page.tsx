@@ -1,5 +1,7 @@
 "use client";
 
+import { COPYRIGHT, COPYRIGHT_ZH, SCHOOL_DOMAIN } from "@/lib/school";
+
 import Link from "next/link";
 import { useState } from "react";
 import Avatar from "@/components/Avatar";
@@ -171,7 +173,8 @@ export default function SettingsPage() {
             {profile.email}
           </div>
           <div>
-            <b>School：</b>P.L.K. Siu Hon Sum Primary School (plkshs.edu.hk)
+            <b>Sign-in domain 登入網域：</b>
+            {SCHOOL_DOMAIN}
           </div>
         </div>
         <Link
@@ -183,7 +186,7 @@ export default function SettingsPage() {
       </section>
 
       <p className="text-center text-[11px] opacity-70 font-cn pb-4">
-        版權歸 PLKSHS 所屬 · © PLKSHS · Vocadex · P.L.K. Siu Hon Sum Primary School
+        {COPYRIGHT_ZH} · {COPYRIGHT}
       </p>
     </div>
   );

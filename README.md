@@ -1,7 +1,11 @@
 # Vocadex
 
-**Vocadex** is an English vocabulary and exercise platform built for the students of
-**P.L.K. Siu Hon Sum Primary School** (保良局蕭漢森小學 · `plkshs.edu.hk`).
+**Vocadex** is an English vocabulary and exercise platform for primary-school pupils.
+Pupils sign in with their school email address (for example `211B0000@plkshs.edu.hk`).
+
+> The app is branded **Vocadex** only. No school name, crest or organisation is
+> referenced in the interface — the school's domain appears solely inside pupil email
+> addresses, which the app needs in order to turn a class number into an account.
 
 It looks and plays a little like Duolingo: short, cheerful exercises, chunky buttons,
 streaks of encouragement — but every question is generated from the Hong Kong
@@ -31,7 +35,7 @@ primary English curriculum.
 
 ### Sidebar
 `Home` · `Energies` · `Exercises` · `Settings`, with **Log Out** pinned at the bottom
-and the copyright line **© PLKSHS / 版權歸 PLKSHS 所屬** beneath it.
+and the copyright line **© Vocadex / 版權歸 Vocadex 所屬** beneath it.
 
 ### Home
 - Left: account name + school email
@@ -98,7 +102,7 @@ Sign in with any `@plkshs.edu.hk` address — for example
 
    | Name | Value |
    |---|---|
-   | `TEACHER_KEY` | the password teachers type on `/teacher` (e.g. `plkshs`) |
+   | `TEACHER_KEY` | the password teachers type on `/teacher` (e.g. `change-me-2026`) |
    | `UPSTASH_REDIS_REST_URL` | from console.upstash.com |
    | `UPSTASH_REDIS_REST_TOKEN` | from console.upstash.com |
 
@@ -149,7 +153,7 @@ Storage (`src/lib/server/db.ts`) picks one of two back-ends automatically:
 
 ```bash
 # .env.local
-TEACHER_KEY=plkshs
+TEACHER_KEY=change-me-2026
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```
@@ -209,7 +213,7 @@ Every student also gets their **own** QR card:
 - Teacher: `/teacher` → **Students** → press **QR** on a row → **Download PNG**.
 - The PNG is a real `.png` card: **the QR code on top**, the **pupil's name printed
   underneath** (so nobody takes the wrong card), the class number / email below that,
-  and a `PLKSHS · Vocadex` footer. 720 × 910.
+  and a `Vocadex` footer. 720 × 910.
 - The code itself has the **Vocadex logo printed in the centre**, rendered with
   error-correction level **H (30%)**, so the logo never stops it scanning.
 - The encoded text is **only the email and the password** — no URL, nothing else:
@@ -319,4 +323,4 @@ sign-in screen. Replace that single file to rebrand the whole app.
 
 ---
 
-Copyright © PLKSHS · 版權歸保良局蕭漢森小學（PLKSHS）所屬
+Copyright © Vocadex · 版權歸 Vocadex 所屬

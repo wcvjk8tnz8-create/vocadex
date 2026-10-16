@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "./school";
 /**
  * Turns the plain QR PNG from the server into a printable card:
  * the code on top, the pupil's name underneath, plus the school footer.
@@ -129,7 +130,7 @@ export async function drawStudentCard(
   ctx.fill();
   ctx.fillStyle = "#ffffff";
   ctx.font = `800 20px "Momo Trust Sans", "Comic Sans MS", system-ui, sans-serif`;
-  ctx.fillText("PLKSHS · Vocadex", CARD_W / 2, plateY + 152);
+  ctx.fillText(SCHOOL_NAME, CARD_W / 2, plateY + 152);
 
   return canvas.toDataURL("image/png");
 }
@@ -165,7 +166,7 @@ export async function drawStudentSheet(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `800 30px "Momo Trust Sans", "Comic Sans MS", system-ui, sans-serif`;
-  ctx.fillText("Vocadex sign-in cards · 保良局蕭漢森小學", sheetW / 2, 34);
+  ctx.fillText("Vocadex sign-in cards", sheetW / 2, 34);
 
   for (let i = 0; i < rows.length; i++) {
     const url = await drawStudentCard(rows[i], { scale: cardW / CARD_W });

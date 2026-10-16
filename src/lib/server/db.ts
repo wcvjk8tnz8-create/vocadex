@@ -240,7 +240,7 @@ export async function revokeLoginToken(code: string) {
 /* --------------------------- teacher access -------------------------- */
 
 export function teacherKey() {
-  return process.env.TEACHER_KEY || process.env.VOCATEX_TEACHER_KEY || "plkshs";
+  return process.env.TEACHER_KEY || process.env.VOCATEX_TEACHER_KEY || "teacher";
 }
 
 /** True when the school has actually set TEACHER_KEY in the environment. */

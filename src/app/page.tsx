@@ -5,18 +5,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { parseCredential } from "@/lib/credential";
+import { COPYRIGHT, COPYRIGHT_ZH, SCHOOL_DOMAIN, SCHOOL_NAME, SCHOOL_NAME_ZH, toSchoolEmail } from "@/lib/school";
 import { nameFromEmail, useApp } from "@/lib/store";
 
 const QrScanner = dynamic(() => import("@/components/QrScanner"), { ssr: false });
 
-const SCHOOL_DOMAIN = "plkshs.edu.hk";
-
-/** 211B0000 -> 211B0000@plkshs.edu.hk ; already an email -> as-is */
+/** 211B0000 -> 211B0000@<school domain> ; already an email -> as-is */
 function toEmail(raw: string) {
-  const v = raw.trim().toLowerCase();
-  if (!v) return "";
-  if (v.includes("@")) return v;
-  return `${v}@${SCHOOL_DOMAIN}`;
+  return toSchoolEmail(raw);
 }
 
 export default function LoginPage() {
@@ -102,7 +98,7 @@ export default function LoginPage() {
             <div className="text-center">
               <h1 className="text-3xl font-black leading-none">Vocadex</h1>
               <p className="font-cn text-sm opacity-80 mt-1">
-                保良局蕭漢森小學 · 英文詞彙練習平台
+                {SCHOOL_NAME_ZH}
               </p>
             </div>
           </div>
@@ -199,7 +195,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-5 text-center text-[11px] opacity-70 font-cn">
-            版權歸 PLKSHS 所屬 · © PLKSHS · P.L.K. Siu Hon Sum Primary School
+            {COPYRIGHT_ZH} · {COPYRIGHT} · {SCHOOL_NAME}
           </p>
         </div>
       </div>

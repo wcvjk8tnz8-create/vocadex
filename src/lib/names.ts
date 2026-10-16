@@ -1,8 +1,8 @@
 /**
  * Display-name helper shared by the client app and the server routes.
  *
- * saratan@plkshs.edu.hk -> "Sara Tan"
- * 211B0000@plkshs.edu.hk -> "211B0000"
+ * saratan@school.edu.hk -> "Sara Tan"
+ * 211B0000@school.edu.hk -> "211B0000"
  */
 
 const FIRST_NAMES = [
@@ -18,7 +18,7 @@ const FIRST_NAMES = [
   "ho", "ka", "chun", "kit", "lam", "lee", "chan", "cheung", "wong", "hoi", "hei", "yiu",
 ];
 
-/** saratan@plkshs.edu.hk -> "Sara Tan" | 211B0000@plkshs.edu.hk -> "211B0000" */
+/** saratan@<domain> -> "Sara Tan" | 211B0000@<domain> -> "211B0000" */
 export function nameFromEmail(email: string): string {
   const prefix = (email.split("@")[0] || "").trim();
   if (!prefix) return "Student";

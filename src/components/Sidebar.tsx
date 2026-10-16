@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { COPYRIGHT, COPYRIGHT_ZH, SCHOOL_NAME, SCHOOL_NAME_ZH } from "@/lib/school";
 import { usePathname, useRouter } from "next/navigation";
 import Avatar from "./Avatar";
 import { useApp } from "@/lib/store";
@@ -27,7 +28,7 @@ export default function Sidebar() {
           <img src="/logo.png" alt="Vocadex" className="h-12 w-12 rounded-2xl" />
           <div className="leading-tight">
             <div className="text-xl font-black">Vocadex</div>
-            <div className="font-cn text-[11px] opacity-70">保良局蕭漢森小學</div>
+            <div className="font-cn text-[11px] opacity-70">{SCHOOL_NAME_ZH}</div>
           </div>
         </div>
 
@@ -81,9 +82,9 @@ export default function Sidebar() {
         </button>
 
         <div className="mt-3 pt-3 border-t border-white/40 text-[10px] leading-snug opacity-80">
-          <div className="font-black">© PLKSHS</div>
-          <div className="font-cn">版權歸 PLKSHS 所屬</div>
-          <div>P.L.K. Siu Hon Sum Primary School</div>
+          <div className="font-black">{COPYRIGHT}</div>
+          <div className="font-cn">{COPYRIGHT_ZH}</div>
+          <div>{SCHOOL_NAME}</div>
         </div>
       </aside>
 
@@ -93,7 +94,7 @@ export default function Sidebar() {
         <img src="/logo.png" alt="Vocadex" className="h-10 w-10 rounded-xl" />
         <div className="leading-tight flex-1">
           <div className="font-black">Vocadex</div>
-          <div className="font-cn text-[10px] opacity-70">保良局蕭漢森小學</div>
+          <div className="font-cn text-[10px] opacity-70">{SCHOOL_NAME_ZH}</div>
         </div>
         {profile && <Avatar id={profile.avatar} size={34} />}
       </div>

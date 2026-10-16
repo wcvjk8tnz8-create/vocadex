@@ -1070,7 +1070,7 @@ export const UPPER_UNITS: Unit[] = [
       "I feel confident about the challenge.",
     ],
     passage:
-      "Next September I will start secondary school. I have been at PLKSHS for six years and I have many happy memories. There will be new subjects and a new timetable. My goal is to improve my English, and I feel confident about the challenge.",
+      "Next September I will start secondary school. I have been at this school for six years and I have many happy memories. There will be new subjects and a new timetable. My goal is to improve my English, and I feel confident about the challenge.",
     questions: [
       { q: "When will the writer start secondary school?", options: ["Next September", "Next Monday", "Tomorrow"], answer: 0 },
       { q: "What is the writer's goal?", options: ["To improve English", "To leave school", "To sleep more"], answer: 0 },

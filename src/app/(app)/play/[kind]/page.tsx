@@ -1,5 +1,7 @@
 "use client";
 
+import { COPYRIGHT_ZH, SCHOOL_NAME } from "@/lib/school";
+
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WordArt } from "@/components/WordArt";
@@ -634,7 +636,7 @@ function ResultScreen({
         </div>
       </div>
       <p className="text-center text-[11px] opacity-70 mt-4 font-cn">
-        版權歸 PLKSHS 所屬 · Vocadex · P.L.K. Siu Hon Sum Primary School
+        {COPYRIGHT_ZH} · {SCHOOL_NAME}
       </p>
     </div>
   );

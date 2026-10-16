@@ -1,5 +1,7 @@
 "use client";
 
+import { COPYRIGHT_ZH, SCHOOL_NAME } from "@/lib/school";
+
 import { useEffect, useState } from "react";
 import {
   ENERGY_COST_PER_QUESTION,
@@ -125,7 +127,7 @@ export default function EnergiesPage() {
       </section>
 
       <p className="text-center text-[11px] opacity-70 font-cn">
-        版權歸 PLKSHS 所屬 · Vocadex · P.L.K. Siu Hon Sum Primary School
+        {COPYRIGHT_ZH} · {SCHOOL_NAME}
       </p>
     </div>
   );
